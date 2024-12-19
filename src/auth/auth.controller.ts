@@ -13,7 +13,9 @@ export class AuthController {
   @ApiBody({
     type: LoginDto,
   })
-  async login(@Body(ValidationPipe) loginDto: LoginDto): Promise<LoginResponseDto> {
+  async login(
+    @Body(ValidationPipe) loginDto: LoginDto,
+  ): Promise<LoginResponseDto> {
     return await this.authService.loginViaRest(loginDto);
   }
 }
