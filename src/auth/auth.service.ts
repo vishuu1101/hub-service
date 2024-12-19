@@ -79,8 +79,12 @@ export class AuthService {
 
   async loginViaRest(loginDto: LoginDto): Promise<LoginResponseDto> {
     try {
-      const url = `http://https://account-management-service-gden.onrender.com/users/getByEmail?email=${encodeURIComponent(loginDto.email)}`;
-      const response = await lastValueFrom(this.httpService.get(url));
+      const url = `https://account-management-service-gden.onrender.com/users/getByEmail?email=${encodeURIComponent(loginDto.email)}`;
+      const response = await lastValueFrom(
+        this.httpService.get(
+          url,
+        ),
+      );
       // Convert the response to a DTO
       const userInfoDto = plainToInstance(UserInfoDto, response.data);
       // Compare the hashed password
@@ -103,7 +107,7 @@ export class AuthService {
       }
     } catch (error) {
       console.error('Error fetching data:', error.message);
-      if (error instanceof UnauthorizedException) {
+      if ( error instanceof UnauthorizedException ) {
         throw error; // Rethrow specific exceptions for the caller
       }
       throw new Error('Failed to fetch data from microservice');
