@@ -17,7 +17,7 @@ import { jwtConstants } from 'src/util/constants';
         name: 'USER_MANAGEMENT_SERVICE',
         transport: Transport.TCP,
         options: {
-          host: 'account-management-service-gden.onrender.com',
+          host: 'account-management-service',
           port: 3001,
         },
       },
