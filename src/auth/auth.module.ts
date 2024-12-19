@@ -15,7 +15,7 @@ import { HttpModule } from '@nestjs/axios';
     JwtModule.register({
       global: true,
       secret: jwtConstants.secret,
-      signOptions: { expiresIn: 60 },
+      signOptions: { expiresIn: '2m' },
     }),
     ClientsModule.register([
       {
