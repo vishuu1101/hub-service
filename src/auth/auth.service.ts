@@ -107,6 +107,9 @@ export class AuthService {
       }
     } catch (error) {
       console.error('Error fetching data:', error.message);
+      if (error.message && error.status === 404) {
+        throw new BadRequestException('User not found');
+      }
       if ( error instanceof UnauthorizedException ) {
         throw error; // Rethrow specific exceptions for the caller
       }
