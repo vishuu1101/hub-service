@@ -10,6 +10,7 @@ import { LoginDto } from './dto/login.dto';
 import { LoginResponseDto } from './dto/login-response.dto';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
 import { LogoutDto } from './dto/logout.dto';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -36,20 +37,22 @@ export class AuthController {
   }
 
   @Post('refresh')
-  async refresh(
-    @Body('email') email: string,
-    @Body('refreshToken') refreshToken: string,
-  ) {
+  @ApiBody({
+    type: RefreshTokenDto,
+  })
+  async refresh(@Body(ValidationPipe) refreshTokenDto: RefreshTokenDto) {
     const isValid = await this.authService.validateRefreshToken(
-      email,
-      refreshToken,
+      refreshTokenDto.email,
+      refreshTokenDto.refreshToken,
     );
 
     if (!isValid) {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
-    const newAccessToken = await this.authService.generateAccessToken(email);
+    const newAccessToken = await this.authService.generateAccessToken(
+      refreshTokenDto.email,
+    );
     return { accessToken: newAccessToken };
   }
 }
