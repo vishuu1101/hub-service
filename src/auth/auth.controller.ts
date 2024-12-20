@@ -9,6 +9,7 @@ import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { LoginResponseDto } from './dto/login-response.dto';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
+import { LogoutDto } from './dto/logout.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -26,8 +27,11 @@ export class AuthController {
   }
 
   @Post('logout')
-  async logout(@Body('email') email: string) {
-    await this.authService.revokeRefreshToken(email);
+  @ApiBody({
+    type: LogoutDto,
+  })
+  async logout(@Body(ValidationPipe) logoutDto: LogoutDto) {
+    await this.authService.revokeRefreshToken(logoutDto.email);
     return { message: 'Logged out successfully' };
   }
 
