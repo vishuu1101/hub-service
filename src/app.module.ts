@@ -21,6 +21,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
         username: configService.get<string>('DB_USERNAME'),
         entities: [__dirname + '/**/*.entity.{ts,js}'],
         database: configService.get<string>('DB_DATABASE'),
+        synchronize: true,
         logging: true,
       }),
     }),
