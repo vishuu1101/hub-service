@@ -17,7 +17,6 @@ export class UserService {
       const response = await lastValueFrom(
         this.httpService.post(url, updateUserDto),
       );
-      console.log(response);
       return plainToInstance(UserInfoDto, response.data);
     } catch (error) {
       console.error('Error while updating user:', error.message);

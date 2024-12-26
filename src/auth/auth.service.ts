@@ -32,7 +32,7 @@ export class AuthService {
       const url = `${this.USER_SERVICE_HOST}/users/getByEmail?email=${encodeURIComponent(loginDto.email)}`;
       const response = await lastValueFrom(this.httpService.get(url));
       // Convert the response to a DTO
-      const userInfoDto = plainToInstance(UserInfoDto, response.data);
+      const userInfoDto = plainToInstance(UserInfoDto, response.data.data);
       // Compare the hashed password
       const isMatch = await bcrypt.compare(
         loginDto.password,
