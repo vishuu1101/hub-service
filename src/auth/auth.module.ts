@@ -1,10 +1,14 @@
 import { Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
-import { ClientsModule, Transport } from '@nestjs/microservices';
 import { JwtModule } from '@nestjs/jwt';
 import { jwtConstants } from 'src/util/constants';
 import { HttpModule } from '@nestjs/axios';
+import { User } from './entities/user.entity';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { UserRepository } from './repository/user.repository';
+import { UserAuthRepository } from './repository/user-auth.repository';
+import { UserAuth } from './entities/user-auth.entity';
 
 @Module({
   imports: [
@@ -17,18 +21,9 @@ import { HttpModule } from '@nestjs/axios';
       secret: jwtConstants.secret,
       signOptions: { expiresIn: '2m' },
     }),
-    ClientsModule.register([
-      {
-        name: 'USER_MANAGEMENT_SERVICE',
-        transport: Transport.TCP,
-        options: {
-          host: 'account-management-service',
-          port: 3001,
-        },
-      },
-    ]),
+    TypeOrmModule.forFeature([User, UserAuth]),
   ],
-  providers: [AuthService],
+  providers: [AuthService, UserRepository, UserAuthRepository],
   controllers: [AuthController],
 })
 export class AuthModule {}

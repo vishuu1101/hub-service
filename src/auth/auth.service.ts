@@ -1,10 +1,9 @@
 import {
   BadRequestException,
-  Inject,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
 import { plainToInstance } from 'class-transformer';
@@ -14,22 +13,29 @@ import { HttpService } from '@nestjs/axios';
 import { jwtConstants } from 'src/util/constants';
 import { JwtService } from '@nestjs/jwt';
 import { lastValueFrom } from 'rxjs';
+import { ConfigService } from '@nestjs/config';
+import { UserRepository } from './repository/user.repository';
+import { UserAuth } from './entities/user-auth.entity';
+import { User } from './entities/user.entity';
+import { UserAuthRepository } from './repository/user-auth.repository';
 
 @Injectable()
 export class AuthService {
-  private readonly refreshTokens: Map<string, string> = new Map();
   private readonly USER_SERVICE_HOST: string =
-    'https://account-management-service-gden.onrender.com';
+    this.configService.get('USER_SERVICE_HOST');
 
   constructor(
-    @Inject('USER_MANAGEMENT_SERVICE') private readonly userClient: ClientProxy,
     private readonly httpService: HttpService,
     private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
+    private readonly userRepository: UserRepository,
+    private readonly userAuthRepository: UserAuthRepository,
   ) {}
 
   async loginViaRest(loginDto: LoginDto): Promise<LoginResponseDto> {
     try {
       const url = `${this.USER_SERVICE_HOST}/users/getByEmail?email=${encodeURIComponent(loginDto.email)}`;
+
       const response = await lastValueFrom(this.httpService.get(url));
       // Convert the response to a DTO
       const userInfoDto = plainToInstance(UserInfoDto, response.data.data);
@@ -42,6 +48,28 @@ export class AuthService {
       if (isMatch) {
         const accessToken = await this.generateAccessToken(userInfoDto.email);
         const refreshToken = await this.generateRefreshToken(userInfoDto.email);
+
+        // get user from db. if available then replace userAuth other create both objects and save in DB
+        let userFromDB = await this.userRepository.getUserByEmail(
+          loginDto.email,
+        );
+        if (userFromDB) {
+          const userAuth = new UserAuth();
+          userAuth.accessToken = accessToken;
+          userAuth.refreshToken = refreshToken;
+          userAuth.user = userFromDB;
+          userFromDB.userAuth = userAuth;
+        } else {
+          userFromDB = new User();
+          userFromDB.email = loginDto.email;
+          const userAuth = new UserAuth();
+          userAuth.accessToken = accessToken;
+          userAuth.refreshToken = refreshToken;
+          userAuth.user = userFromDB;
+          userFromDB.userAuth = userAuth;
+        }
+
+        await this.userRepository.saveOrupdate(userFromDB);
 
         return {
           id: userInfoDto.id,
@@ -77,9 +105,6 @@ export class AuthService {
       { secret: jwtConstants.refresh_secret, expiresIn: '7d' },
     );
 
-    const hashedToken = await bcrypt.hash(refreshToken, 10);
-    this.refreshTokens.set(email, hashedToken);
-
     return refreshToken;
   }
 
@@ -87,14 +112,33 @@ export class AuthService {
     email: string,
     refreshToken: string,
   ): Promise<boolean> {
-    const hashedToken = this.refreshTokens.get(email);
+    const userFromDB = await this.userRepository.getUserByEmail(email);
+    if (!userFromDB) {
+      throw new NotFoundException(
+        `User with EmailId:${email} is not available`,
+      );
+    }
+    if (!userFromDB.userAuth) {
+      throw new BadRequestException(
+        `User with EmailId:${email} already logged out. Please login again.`,
+      );
+    }
+    const refreshTokenFromDB = userFromDB.userAuth.refreshToken;
 
-    if (!hashedToken) return false;
+    if (!refreshTokenFromDB || refreshTokenFromDB !== refreshToken) {
+      return false;
+    }
 
-    return bcrypt.compare(refreshToken, hashedToken);
+    return true;
   }
 
   async revokeRefreshToken(email: string): Promise<void> {
-    this.refreshTokens.delete(email);
+    const userFromDB = await this.userRepository.getUserByEmail(email);
+    if (userFromDB) {
+      const userAuthId = userFromDB.userAuth.id;
+      userFromDB.userAuth = null;
+      await this.userRepository.saveOrupdate(userFromDB);
+      await this.userAuthRepository.delete(userAuthId);
+    }
   }
 }

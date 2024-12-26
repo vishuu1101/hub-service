@@ -4,7 +4,7 @@ import { UserService } from './user.service';
 import { AuthGuard } from 'src/util/auth.guard';
 import { ApiBody } from '@nestjs/swagger';
 
-@Controller('user')
+@Controller('v1/user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
