@@ -4,7 +4,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { LoginDto } from './dto/login.dto';
+import { LoginRequestDTO } from './dto/login-request.dto';
 import * as bcrypt from 'bcrypt';
 import { plainToInstance } from 'class-transformer';
 import { UserInfoDto } from '../user/dto/user-info.dto';
@@ -18,6 +18,7 @@ import { UserRepository } from './repository/user.repository';
 import { UserAuth } from './entities/user-auth.entity';
 import { User } from './entities/user.entity';
 import { UserAuthRepository } from './repository/user-auth.repository';
+import { LogoutResponseDTO } from './dto/logout-response.dto';
 
 @Injectable()
 export class AuthService {
@@ -32,7 +33,7 @@ export class AuthService {
     private readonly userAuthRepository: UserAuthRepository,
   ) {}
 
-  async loginViaRest(loginDto: LoginDto): Promise<LoginResponseDto> {
+  async loginViaRest(loginDto: LoginRequestDTO): Promise<LoginResponseDto> {
     try {
       const url = `${this.USER_SERVICE_HOST}/users/getByEmail?email=${encodeURIComponent(loginDto.email)}`;
 
@@ -132,13 +133,16 @@ export class AuthService {
     return true;
   }
 
-  async revokeRefreshToken(email: string): Promise<void> {
+  async revokeRefreshToken(email: string): Promise<LogoutResponseDTO> {
     const userFromDB = await this.userRepository.getUserByEmail(email);
-    if (userFromDB) {
+    if (userFromDB && userFromDB.userAuth) {
       const userAuthId = userFromDB.userAuth.id;
       userFromDB.userAuth = null;
       await this.userRepository.saveOrupdate(userFromDB);
       await this.userAuthRepository.delete(userAuthId);
     }
+    return {
+      message: 'Logged out successfully',
+    };
   }
 }

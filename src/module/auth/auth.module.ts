@@ -9,6 +9,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserRepository } from './repository/user.repository';
 import { UserAuthRepository } from './repository/user-auth.repository';
 import { UserAuth } from './entities/user-auth.entity';
+import { ResponseUtil } from 'src/util/response.util';
 
 @Module({
   imports: [
@@ -19,11 +20,11 @@ import { UserAuth } from './entities/user-auth.entity';
     JwtModule.register({
       global: true,
       secret: jwtConstants.secret,
-      signOptions: { expiresIn: '2m' },
+      signOptions: { expiresIn: '5m' },
     }),
     TypeOrmModule.forFeature([User, UserAuth]),
   ],
-  providers: [AuthService, UserRepository, UserAuthRepository],
+  providers: [AuthService, UserRepository, UserAuthRepository, ResponseUtil],
   controllers: [AuthController],
 })
 export class AuthModule {}

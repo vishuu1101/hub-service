@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common';
-import { AuthModule } from './auth/auth.module';
-import { UserModule } from './user/user.module';
+import { AuthModule } from './module/auth/auth.module';
+import { UserModule } from './module/user/user.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ResponseUtil } from './util/response.util';
 
 @Module({
   imports: [
@@ -21,12 +22,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
         username: configService.get<string>('DB_USERNAME'),
         entities: [__dirname + '/**/*.entity.{ts,js}'],
         database: configService.get<string>('DB_DATABASE'),
-        synchronize: true,
-        logging: true,
+        logging: false,
       }),
     }),
     AuthModule,
     UserModule,
   ],
+  providers: [ResponseUtil],
+  exports: [ResponseUtil],
 })
 export class AppModule {}
