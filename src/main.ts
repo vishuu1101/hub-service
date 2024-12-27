@@ -10,6 +10,9 @@ async function bootstrap() {
 
   app.setGlobalPrefix('hub-service');
 
+  //enabling for all to test
+  app.enableCors();
+
   const swaggerOptions = new DocumentBuilder()
     .setTitle('Hub Service')
     .setDescription(
